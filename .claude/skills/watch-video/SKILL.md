@@ -30,6 +30,8 @@ Claude can't play video, so this turns it into text + images.
 
 ## Limits
 
+- YouTube descriptions often show truncated links (`github.com/user/name...`). Guess the full name and check with `git ls-remote https://github.com/<user>/<guess>.git HEAD`, then clone it into `refs/`.
+
 - YouTube links give 4 frames (cover + 3 auto frames) and subtitles; videos without subtitles have no transcript — ask the user for the file then.
 - YouTube may rate-limit (HTTP 429) or bot-check cloud servers; if so, ask the user to upload the video file or paste the transcript.
 - Local files get frames every N seconds and speech recognition (Whisper, downloads ~500MB model on first run).
