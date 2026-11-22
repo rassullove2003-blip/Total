@@ -16,13 +16,14 @@ function rings(geom) {
 }
 function trace(c, ring) { ring.forEach(([lo, la], i) => { const [x, y] = P(lo, la); i ? c.lineTo(x, y) : c.moveTo(x, y); }); }
 
-const CITIES = [["Ryazan", 39.7, 54.6], ["Kolomna", 38.75, 55.1], ["Moscow", 37.6, 55.75], ["Vladimir", 40.4, 56.13], ["Torzhok", 34.96, 57.04], ["Novgorod", 31.27, 58.52]];
+const CITIES = [["Ryazan", 39.7, 54.6], ["Kolomna", 38.75, 55.1], ["Moscow", 37.6, 55.75], ["Vladimir", 40.4, 56.13], ["Tver", 35.9, 56.86, "below"], ["Torzhok", 34.96, 57.04], ["Novgorod", 31.27, 58.52]];
 const ROUTE = [[47, 51.5], [43, 53.4], [39.7, 54.6], [38.75, 55.1], [37.6, 55.75], [40.4, 56.13], [37.5, 56.7], [34.96, 57.04], [33.0, 57.9]];
-const ICE = ["Volga", "Oka", "Don", "Kama", "Volkhov", "Dnieper", "Western Dvina", "Daugava", "Msta", "Sheksna"];
+const ICE = ["Volga", "Oka", "Don", "Kama", "Volkhov", "Msta", "Sheksna", "Klyazma", "Tvertsa", "Pronya"];
 
 const STYLES = {
   A: { name: "A · Parchment", sea: "#9fb8b4", land: "#e6d3a8", landEdge: "#8a6a3e", grain: "#b89a66", river: "#7fa6b8", ice: "#f4fbff", iceEdge: "#5d8fb0",
-       city: "#7a2e22", route: "#a3261d", text: "#3b2a18", vignette: "rgba(60,35,10,.55)", font: "Georgia, DejaVu Serif, serif" },
+       city: "#7a2e22", route: "#a3261d", text: "#3b2a18", vignette: "rgba(60,35,10,.55)", font: "Georgia, DejaVu Serif, serif",
+       forest: "#6f7d4a", forest2: "#5d6b3e", steppe: "#b59a5c", folds: "rgba(120,90,50,.18)", regions: "#5a3d1e", noSnow: true },
   B: { name: "B · Clean flat", sea: "#3f7fb8", land: "#e9eef2", landEdge: "#9fb0bf", grain: null, river: "#5aa0d8", ice: "#ffffff", iceEdge: "#2c74c2",
        city: "#22304a", route: "#e2453c", text: "#22304a", vignette: "rgba(20,30,60,.25)", font: "DejaVu Sans, sans-serif" },
   C: { name: "C · Ink & gold", sea: "#14202e", land: "#2a3346", landEdge: "#d9b36a", grain: "#323c52", river: "#46607e", ice: "#e7f3ff", iceEdge: "#9cc6f0",
@@ -43,6 +44,23 @@ function drawMap(c, st, GEO) {
   // lakes
   c.beginPath(); for (const f of GEO.lakes.features) for (const r of rings(f.geometry)) { trace(c, r); c.closePath(); }
   c.fillStyle = st.sea; c.fill();
+
+  // terrain glyphs: forest north of ~54.3N, steppe grass south (deterministic), clipped to land
+  if (st.forest) {
+    c.save(); c.beginPath(); for (const f of GEO.land.features) for (const r of rings(f.geometry)) { trace(c, r); c.closePath(); } c.clip("evenodd");
+    for (let i = 0; i < 950; i++) {
+      const lo = B.lon0 + (((Math.sin(i * 91.7) * 1e4) % 1 + 1) % 1) * (B.lon1 - B.lon0), la = B.lat0 + (((Math.sin(i * 37.3) * 1e4) % 1 + 1) % 1) * (B.lat1 - B.lat0);
+      const [x, y] = P(lo, la), sz = 5 + (i % 4);
+      if (la > 54.3 + Math.sin(lo * 0.7) * 0.6) {
+        c.fillStyle = i % 3 ? st.forest : st.forest2; c.beginPath(); c.moveTo(x, y - sz * 1.6); c.lineTo(x - sz * 0.8, y); c.lineTo(x + sz * 0.8, y); c.closePath(); c.fill();
+      } else if (la < 53.2 + Math.sin(lo * 0.9) * 0.5 && i % 2) {
+        c.strokeStyle = st.steppe; c.lineWidth = 1.6; c.beginPath(); c.moveTo(x - 4, y); c.lineTo(x - 1, y - 6); c.moveTo(x, y); c.lineTo(x, y - 8); c.moveTo(x + 4, y); c.lineTo(x + 1, y - 6); c.stroke();
+      }
+    }
+    c.restore();
+  }
+  // paper folds
+  if (st.folds) { c.strokeStyle = st.folds; c.lineWidth = 2; for (const fx of [W / 3, 2 * W / 3]) { c.beginPath(); c.moveTo(fx, 0); c.lineTo(fx, H); c.stroke(); } c.beginPath(); c.moveTo(0, H / 2); c.lineTo(W, H / 2); c.stroke(); }
   // rivers: normal, then frozen highways on top
   for (const f of GEO.rivers.features) {
     const name = f.properties.name || "", frozen = ICE.some((n) => name.includes(n));
@@ -64,14 +82,23 @@ function drawMap(c, st, GEO) {
   }
   // cities
   c.font = `bold 21px ${st.font}`; c.textBaseline = "middle";
-  for (const [n, lo, la] of CITIES) {
-    const [x, y] = P(lo, la);
-    c.fillStyle = st.city; c.beginPath(); c.arc(x, y, 8, 0, 7); c.fill(); c.lineWidth = 3; c.strokeStyle = st.land; c.stroke();
+  if (!window.NO_LABELS) for (const [n, lo, la, pos] of CITIES) {
+    const [x, y0] = P(lo, la), y = pos === "below" ? y0 + 22 : y0;
+    c.fillStyle = st.city; c.beginPath(); c.arc(x, y0, 8, 0, 7); c.fill(); c.lineWidth = 3; c.strokeStyle = st.land; c.stroke();
     c.fillStyle = st.text; c.lineWidth = 5; c.strokeStyle = st.land; c.strokeText(n, x + 12, y - 2); c.fillText(n, x + 12, y - 2);
+  }
+
+  // region names
+  if (st.regions) {
+    c.save(); c.textAlign = "center"; c.fillStyle = st.regions; c.globalAlpha = 0.55;
+    for (const [n, lo, la, sz, rot] of [["R U S '", 38.6, 59.6, 44, -0.08], ["WILD  STEPPE", 41.5, 50.2, 30, -0.05], ["VOLGA", 46.6, 55.5, 22, 0.1], ["BULGARIA", 46.6, 55.0, 22, 0.1]]) {
+      const [x, y] = P(lo, la); c.save(); c.translate(x, y); c.rotate(rot); c.font = `italic bold ${sz}px ${st.font}`; c.fillText(n, 0, 0); c.restore();
+    }
+    c.restore();
   }
   // snow speckles
   c.fillStyle = "rgba(255,255,255,.85)";
-  for (let i = 0; i < 140; i++) { c.beginPath(); c.arc((i * 97) % W, (i * 211) % H, 1.5 + (i % 3), 0, 7); c.fill(); }
+  if (!st.noSnow) for (let i = 0; i < 140; i++) { c.beginPath(); c.arc((i * 97) % W, (i * 211) % H, 1.5 + (i % 3), 0, 7); c.fill(); }
   // vignette
   const g = c.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.75);
   g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, st.vignette); c.fillStyle = g; c.fillRect(0, 0, W, H);
