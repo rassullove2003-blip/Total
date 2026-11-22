@@ -34,6 +34,33 @@ def strip_html(s):
 
 
 def find_image(query, used):
+    url, credit = find_openverse(query, used)
+    return (url, credit) if url else find_wikimedia(query, used)
+
+
+def find_openverse(query, used):
+    params = {"q": query, "page_size": 20, "license_type": "commercial,modification"}
+    for attempt in range(4):
+        try:
+            r = requests.get("https://api.openverse.org/v1/images/", params=params, headers=UA, timeout=30)
+            if r.status_code == 200:
+                break
+        except requests.RequestException:
+            pass
+        time.sleep(4 * (attempt + 1))
+    else:
+        return None, None
+    for res in r.json().get("results", []):
+        url = res.get("url", "")
+        if url in used or (res.get("width") or 1000) < 800 or "staticflickr.com" not in url:
+            continue
+        used.add(url)
+        lic = f"CC {res.get('license', '').upper()} {res.get('license_version', '')}".replace("CC PDM", "Public Domain").replace("CC CC0", "CC0")
+        return url, f"\"{res.get('title', 'Untitled')}\" by {res.get('creator', 'Unknown')} — {lic} — {res.get('foreign_landing_url', '')}"
+    return None, None
+
+
+def find_wikimedia(query, used):
     params = {"action": "query", "format": "json", "generator": "search",
               "gsrsearch": f"filetype:bitmap {query}", "gsrnamespace": 6, "gsrlimit": 15,
               "prop": "imageinfo", "iiprop": "url|size|extmetadata", "iiurlwidth": 1600}
@@ -169,7 +196,7 @@ def main(script_path):
          "-c:a", "aac", "-b:a", "160k", "-af", "loudnorm=I=-14:TP=-1.5", str(out)])
 
     desc = spec.get("description", "") + "\n\n" + " ".join(spec.get("tags", [])) + \
-        "\n\nImage credits (Wikimedia Commons):\n" + "\n".join(credits)
+        "\n\nImage credits:\n" + "\n".join(credits)
     (ROOT / "out" / f"{name}.txt").write_text(f"TITLE: {spec['title']}\n\n{desc}\n")
     print(f"done: {out} ({total:.1f}s)")
 
