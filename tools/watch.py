@@ -50,6 +50,28 @@ def contact_sheet(frames, out, cols=4):
     sheet.save(out, quality=85)
 
 
+def fetch_links(text, d, max_repos=5):
+    """Save all links; shallow-clone GitHub repos into refs/ (read-only reference, never executed)."""
+    links = list(dict.fromkeys(re.findall(r"https?://[^\s)\]>\"']+", text)))
+    if not links:
+        return
+    (d / "links.txt").write_text("\n".join(links) + "\n")
+    repos = []
+    for l in links:
+        m = re.match(r"https?://github\.com/([\w.-]+)/([\w.-]+)", l)
+        if m and (m[1], m[2].removesuffix(".git")) not in repos:
+            repos.append((m[1], m[2].removesuffix(".git")))
+    for owner, name in repos[:max_repos]:
+        dest = d / "refs" / f"{owner}__{name}"
+        if not dest.exists():
+            subprocess.run(["git", "clone", "-q", "--depth", "1", "--filter=blob:limit=2m",
+                            f"https://github.com/{owner}/{name}.git", str(dest)], capture_output=True, timeout=180)
+        if dest.exists():
+            subprocess.run(["rm", "-rf", str(dest / ".git")])
+            files = sorted(str(p.relative_to(dest)) for p in dest.rglob("*") if p.is_file())
+            (dest.parent / f"{owner}__{name}.files.txt").write_text("\n".join(files[:500]) + "\n")
+
+
 def youtube(url, d):
     vid = re.search(r"(?:v=|youtu\.be/|shorts/)([\w-]{11})", url)
     vid = vid[1] if vid else "video"
@@ -62,6 +84,7 @@ def youtube(url, d):
         info = json.loads(meta.stdout.splitlines()[0])
         for k in ("title", "channel", "upload_date", "duration", "view_count", "like_count", "tags", "description"):
             lines.append(f"{k}: {info.get(k)}")
+        fetch_links(info.get("description") or "", d)
     except Exception:
         lines.append("metadata: unavailable (YouTube blocked the request)")
     (d / "meta.txt").write_text("\n".join(lines) + "\n")
