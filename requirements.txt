@@ -4,3 +4,4 @@ pillow
 yt-dlp
 faster-whisper
 numpy
+kokoro-onnx
