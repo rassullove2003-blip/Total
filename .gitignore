@@ -6,3 +6,5 @@ watch/
 anim/node_modules/
 anim/out/
 anim/data/*.geojson
+anim/stories/**/*.mp4
+anim/stories/*.mp4
