@@ -1,3 +1,6 @@
 piper-tts
 requests
 pillow
+yt-dlp
+faster-whisper
+numpy
