@@ -1,0 +1,143 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+body{margin:0;background:#f3efe6;font-family:DejaVu Sans,sans-serif}
+.row{display:flex;align-items:center;gap:0;padding:10px 20px;border-bottom:3px solid #d8d0c0}
+.lab{width:220px;font-size:30px;font-weight:bold;color:#2a2340}
+.lab small{display:block;font-size:17px;font-weight:normal;color:#6a6080;margin-top:6px}
+canvas{width:300px;height:460px}
+</style></head><body>
+<div id="root"></div>
+<script>
+const INK = "#1d2340";
+function blob(ctx, pts){ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.closePath();}
+function ell(ctx,x,y,rx,ry,fill,lw=0,stroke=INK,rot=0){ctx.beginPath();ctx.ellipse(x,y,rx,ry,rot,0,Math.PI*2);if(fill){ctx.fillStyle=fill;ctx.fill();}if(lw){ctx.lineWidth=lw;ctx.strokeStyle=stroke;ctx.stroke();}}
+function line(ctx,pts,lw,col=INK){ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.lineWidth=lw;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle=col;ctx.stroke();}
+function curve(ctx,a,c,b,lw,col=INK){ctx.beginPath();ctx.moveTo(...a);ctx.quadraticCurveTo(...c,...b);ctx.lineWidth=lw;ctx.lineCap="round";ctx.strokeStyle=col;ctx.stroke();}
+function shape(ctx,draw,fill,lw=7){ctx.beginPath();draw();ctx.fillStyle=fill;ctx.fill();ctx.lineWidth=lw;ctx.strokeStyle=INK;ctx.lineJoin="round";ctx.stroke();}
+
+// ---------- shared faces ----------
+function bigEyes(ctx,cx,cy,gap,r,expr){
+  for(const s of [-1,1]){
+    const x=cx+s*gap;
+    if(expr==="grin"){curve(ctx,[x-r*.8,cy+r*.2],[x,cy-r*.9],[x+r*.8,cy+r*.2],6);continue;}
+    const ry=expr==="shock"?r*1.25:r;
+    ell(ctx,x,cy,r*.85,ry,"#fff",5);
+    const pr=expr==="shock"?r*.28:r*.42;
+    ell(ctx,x+s*1.5,cy+(expr==="shock"?0:r*.1),pr,pr,INK);
+    ell(ctx,x+s*1.5-pr*.35,cy-pr*.4+(expr==="shock"?0:r*.1),pr*.3,pr*.3,"#fff");
+  }
+}
+function brows(ctx,cx,cy,gap,w,expr,lw=7){
+  for(const s of [-1,1]){
+    const x=cx+s*gap, lift=expr==="shock"?-16:expr==="grin"?-6:0, tilt=expr==="neutral"?4*s:0;
+    line(ctx,[[x-w,cy+lift+tilt],[x+w,cy+lift-tilt]],lw);
+  }
+}
+function mouth(ctx,cx,cy,w,expr){
+  if(expr==="neutral") curve(ctx,[cx-w*.5,cy],[cx,cy+w*.25],[cx+w*.5,cy],6);
+  else if(expr==="shock"){ shape(ctx,()=>ctx.ellipse(cx,cy+8,w*.32,w*.45,0,0,Math.PI*2),"#7a2232",6); }
+  else { shape(ctx,()=>{ctx.moveTo(cx-w*.7,cy-4);ctx.quadraticCurveTo(cx,cy+w*1.0,cx+w*.7,cy-4);ctx.closePath();},"#7a2232",6);
+         ctx.save();ctx.clip();ell(ctx,cx,cy+w*.55,w*.35,w*.2,"#ee7a86");ctx.restore();
+         shape(ctx,()=>{ctx.moveTo(cx-w*.55,cy);ctx.lineTo(cx+w*.55,cy);ctx.lineTo(cx+w*.5,cy+10);ctx.lineTo(cx-w*.5,cy+10);ctx.closePath();},"#fff",3);}
+}
+
+// ---------- A: "Pebble" — wide pebble head, big eyes, mitten hands ----------
+function pebble(ctx,expr,c){
+  const cx=150;
+  // legs
+  line(ctx,[[128,350],[124,420]],16);line(ctx,[[172,350],[176,420]],16);
+  shape(ctx,()=>ctx.ellipse(118,425,24,12,0,0,Math.PI*2),c.shoe,5);shape(ctx,()=>ctx.ellipse(182,425,24,12,0,0,Math.PI*2),c.shoe,5);
+  // body: rounded sack
+  shape(ctx,()=>{ctx.moveTo(105,245);ctx.quadraticCurveTo(92,330,108,360);ctx.lineTo(192,360);ctx.quadraticCurveTo(208,330,195,245);ctx.closePath();},c.body);
+  line(ctx,[[150,250],[150,355]],4,"rgba(29,35,64,.35)");
+  // arms
+  const up=expr==="shock";
+  line(ctx,[[108,262],up?[72,215]:[82,320]],11);line(ctx,[[192,262],up?[228,215]:[218,320]],11);
+  ell(ctx,up?70:80,up?205:330,15,15,c.skin,5);ell(ctx,up?230:220,up?205:330,15,15,c.skin,5);
+  // head: wide pebble
+  shape(ctx,()=>{ctx.moveTo(150,70);ctx.bezierCurveTo(250,66,262,150,238,205);ctx.bezierCurveTo(215,255,85,258,62,205);ctx.bezierCurveTo(38,150,50,74,150,70);},c.skin);
+  // hair tuft
+  shape(ctx,()=>{ctx.moveTo(110,82);ctx.quadraticCurveTo(130,40,152,72);ctx.quadraticCurveTo(170,36,196,84);ctx.quadraticCurveTo(150,95,110,82);},c.hair,5);
+  bigEyes(ctx,150,160,44,26,expr);
+  brows(ctx,150,118,44,16,expr);
+  mouth(ctx,150,212,44,expr);
+  ell(ctx,150,190,6,4,"rgba(29,35,64,.5)");
+}
+
+// ---------- B: "Bulb" — tall lightbulb head, one curl, sleepy lids, coat ----------
+function bulb(ctx,expr,c){
+  line(ctx,[[135,350],[130,422]],9);line(ctx,[[165,350],[170,422]],9);
+  shape(ctx,()=>{ctx.moveTo(108,428);ctx.lineTo(135,428);ctx.lineTo(132,416);ctx.quadraticCurveTo(112,414,108,428);},c.shoe,5);
+  shape(ctx,()=>{ctx.moveTo(192,428);ctx.lineTo(165,428);ctx.lineTo(168,416);ctx.quadraticCurveTo(188,414,192,428);},c.shoe,5);
+  // triangle coat
+  shape(ctx,()=>{ctx.moveTo(150,232);ctx.lineTo(205,362);ctx.lineTo(95,362);ctx.closePath();},c.body);
+  for(const y of [270,300,330]) ell(ctx,150,y,5,5,"#fff",3);
+  const up=expr==="shock";
+  line(ctx,[[128,265],up?[86,205]:[96,330]],8);line(ctx,[[172,265],up?[214,205]:[204,330]],8);
+  ell(ctx,up?84:94,up?198:336,10,10,c.skin,4);ell(ctx,up?216:206,up?198:336,10,10,c.skin,4);
+  // neck + bulb head
+  shape(ctx,()=>{ctx.rect(136,212,28,24);},c.skin,5);
+  shape(ctx,()=>{ctx.moveTo(150,40);ctx.bezierCurveTo(232,40,236,150,190,190);ctx.quadraticCurveTo(178,206,176,218);ctx.lineTo(124,218);ctx.quadraticCurveTo(122,206,110,190);ctx.bezierCurveTo(64,150,68,40,150,40);},c.skin);
+  // curl
+  curve(ctx,[150,42],[130,10],[160,14],7);curve(ctx,[160,14],[180,20],[166,34],7);
+  // eyes: half lids
+  for(const s of [-1,1]){
+    const x=150+s*30,y=128;
+    if(expr==="grin"){curve(ctx,[x-14,y+6],[x,y-12],[x+14,y+6],6);continue;}
+    ell(ctx,x,y,15,expr==="shock"?22:17,"#fff",5);
+    ell(ctx,x,y+(expr==="shock"?0:5),6,6,INK);
+    if(expr==="neutral") shape(ctx,()=>{ctx.ellipse(x,y,15,17,0,Math.PI,Math.PI*2);ctx.closePath();},c.skin,5);
+  }
+  brows(ctx,150,98,30,12,expr,6);
+  // long nose
+  curve(ctx,[150,138],[164,160],[146,166],5);
+  mouth(ctx,150,184,30,expr);
+}
+
+// ---------- C: "Block" — soft rounded-square head, big nose, chunky torso ----------
+function block(ctx,expr,c){
+  shape(ctx,()=>ctx.rect(122,345,22,70),c.pants,5);shape(ctx,()=>ctx.rect(156,345,22,70),c.pants,5);
+  shape(ctx,()=>{ctx.roundRect(110,410,38,20,8)},c.shoe,5);shape(ctx,()=>{ctx.roundRect(152,410,38,20,8)},c.shoe,5);
+  shape(ctx,()=>{ctx.moveTo(108,232);ctx.lineTo(192,232);ctx.lineTo(206,352);ctx.lineTo(94,352);ctx.closePath();},c.body);
+  shape(ctx,()=>{ctx.moveTo(132,232);ctx.lineTo(150,262);ctx.lineTo(168,232);ctx.closePath();},"#fff",4);
+  const up=expr==="shock";
+  shape(ctx,()=>{ctx.moveTo(108,240);ctx.lineTo(up?70:84,up?190:320);ctx.lineTo(up?88:102,up?186:322);ctx.lineTo(118,262);ctx.closePath();},c.body,5);
+  shape(ctx,()=>{ctx.moveTo(192,240);ctx.lineTo(up?230:216,up?190:320);ctx.lineTo(up?212:198,up?186:322);ctx.lineTo(182,262);ctx.closePath();},c.body,5);
+  ell(ctx,up?78:92,up?180:328,13,13,c.skin,5);ell(ctx,up?222:208,up?180:328,13,13,c.skin,5);
+  // head
+  shape(ctx,()=>{ctx.roundRect(68,62,164,172,[54,54,64,64]);},c.skin);
+  // hair cap
+  shape(ctx,()=>{ctx.moveTo(68,120);ctx.quadraticCurveTo(66,56,150,56);ctx.quadraticCurveTo(234,56,232,120);ctx.quadraticCurveTo(200,92,150,96);ctx.quadraticCurveTo(96,92,68,120);},c.hair);
+  // ears
+  ell(ctx,64,160,12,18,c.skin,5);ell(ctx,236,160,12,18,c.skin,5);
+  // eyes: simple dots / shapes
+  for(const s of [-1,1]){
+    const x=150+s*34,y=148;
+    if(expr==="grin") curve(ctx,[x-12,y+4],[x,y-10],[x+12,y+4],7);
+    else if(expr==="shock"){ell(ctx,x,y,13,16,"#fff",5);ell(ctx,x,y,4,4,INK);}
+    else ell(ctx,x,y,7,9,INK);
+  }
+  brows(ctx,150,122,34,15,expr,9);
+  // big nose
+  shape(ctx,()=>ctx.ellipse(150,176,17,13,0,0,Math.PI*2),c.nose,5);
+  mouth(ctx,150,204,40,expr);
+}
+
+const designs=[
+  ["A · Pebble","Широкая голова-камушек, большие глаза, руки-варежки",pebble,{skin:"#ffd9b5",body:"#2f9e8f",hair:"#3a2a2a",shoe:"#e8553e"},{skin:"#c98a5e",body:"#f2b134",hair:"#1d1a1a",shoe:"#2f5fd0"}],
+  ["B · Bulb","Голова-лампочка, завиток, сонный взгляд, длинный нос",bulb,{skin:"#ffe0c4",body:"#e0533d",shoe:"#1d2340"},{skin:"#e0a77c",body:"#3b6fd8",shoe:"#5a3b2a"}],
+  ["C · Block","Мягкий квадрат, крупный нос, коренастый",block,{skin:"#ffd2b0",body:"#7b55d6",hair:"#2b2b33",shoe:"#1d2340",pants:"#33415c",nose:"#f4a990"},{skin:"#a8704a",body:"#e88a2a",hair:"#111",shoe:"#7a2232",pants:"#2f4f3f",nose:"#8f5636"}],
+];
+const root=document.getElementById("root");
+for(const [name,sub,fn,c1,c2] of designs){
+  const row=document.createElement("div");row.className="row";
+  row.innerHTML=`<div class="lab">${name}<small>${sub}</small></div>`;
+  [["neutral",c1],["shock",c1],["grin",c2]].forEach(([e,c])=>{
+    const cv=document.createElement("canvas");cv.width=600;cv.height=920;row.appendChild(cv);
+    const ctx=cv.getContext("2d");ctx.scale(2,2);
+    ctx.fillStyle="rgba(29,35,64,.12)";ctx.beginPath();ctx.ellipse(150,430,80,12,0,0,Math.PI*2);ctx.fill();
+    fn(ctx,e,c);
+  });
+  root.appendChild(row);
+}
+</script></body></html>
