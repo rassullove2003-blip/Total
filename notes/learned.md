@@ -31,3 +31,12 @@ https://youtu.be/OtbLL6OBNE4 · repo: https://github.com/mromidev/claude-animate
 - Many agents: split FILES, not just jobs (each agent its own copy + own files, merge file by file).
 - He gave Claude ~10 hours for the full learn + make cycle.
 - Next video teaser: render smaller then upscale → cut render 7.5 h → 1 h (useful for our CPU-only render).
+
+## 2026-11-22 — "How America Bought Louisiana" (GeoGlobeTales, 18.8M views, 101 s)
+https://youtube.com/shorts/BmNSUb8HxCA
+- Style: 2D. Paper-textured maps (countries coloured flat), chibi bean-shaped historical figures (Napoleon, Jefferson) as cut-outs, word captions, occasional real portrait/painting. Dark vignette.
+- Long for a Short: 101 s, ~4 w/s. Hook = paradox: "sent diplomats to buy one city, ended up buying the whole territory for almost the same price".
+- Then "let's start from the beginning" + timeline with dates, causes chained (Haiti revolution → yellow fever → Louisiana useless → sold).
+- Dry jokes: "working there for free. Yeah, slavery."; ending fact as payoff: "4 cents an acre".
+- Tags: geography/history/maps/weird borders. Niche = geopolitical history explained on maps.
+- For us: 2D map style renders MUCH faster than 3D (no WebGL lighting); fits Russia/USSR geography stories.
