@@ -4,7 +4,7 @@ Usage:
   python3 tools/watch.py <youtube-url-or-local-file> [--every SECONDS]
 Output folder: watch/<id>/  (meta.txt, transcript.txt, frames/*.jpg, sheet.jpg)
 """
-import argparse, json, re, subprocess, sys
+import argparse, json, re, subprocess, sys, time
 from pathlib import Path
 import requests
 
@@ -89,9 +89,13 @@ def youtube(url, d):
         lines.append("metadata: unavailable (YouTube blocked the request)")
     (d / "meta.txt").write_text("\n".join(lines) + "\n")
 
-    subprocess.run(["yt-dlp", "--skip-download", "--write-subs", "--write-auto-subs", "--ignore-errors",
-                    "--sub-langs", "en,en-orig,ru,it", "--sub-format", "vtt", "-o", str(d / "subs"), url],
-                   capture_output=True)
+    for attempt in range(3):  # YouTube often rate-limits the first try
+        subprocess.run(["yt-dlp", "--skip-download", "--write-subs", "--write-auto-subs", "--ignore-errors",
+                        "--sub-langs", "en-orig,en,ru,it", "--sub-format", "vtt", "-o", str(d / "subs"), url],
+                       capture_output=True)
+        if list(d.glob("subs*.vtt")):
+            break
+        time.sleep(10)
     vtts = sorted(d.glob("subs*.vtt"), key=lambda p: ("orig" not in p.name, p.name))
     text = vtt_to_text(vtts[0].read_text()) if vtts else "(no subtitles available)"
     (d / "transcript.txt").write_text(text + "\n")
