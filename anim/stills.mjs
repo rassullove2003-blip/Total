@@ -8,7 +8,7 @@ const chromiumOptions = { gl: "swangle" };
 let t = Date.now();
 const serveUrl = await bundle({ entryPoint: path.resolve("src/index.ts"), publicDir: path.resolve("public") });
 console.log("bundle", ((Date.now() - t) / 1000).toFixed(1) + "s");
-const composition = await selectComposition({ serveUrl, id: "BridgeShort", browserExecutable, chromiumOptions });
+const composition = await selectComposition({ serveUrl, id: process.env.COMP || "BridgeShort", browserExecutable, chromiumOptions });
 const onBrowserLog = (l) => { if (l.type === "error") console.log("[err]", l.text.slice(0, 200)); };
 for (const f of frames.split(",").map(Number)) {
   t = Date.now();
