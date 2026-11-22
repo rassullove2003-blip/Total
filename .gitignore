@@ -3,3 +3,5 @@ voices/
 out/*.mp4
 __pycache__/
 watch/
+anim/node_modules/
+anim/out/
