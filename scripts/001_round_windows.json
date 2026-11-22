@@ -1,0 +1,15 @@
+{
+  "title": "Why Airplane Windows Are Round #shorts",
+  "hook": "Why are plane windows round?",
+  "description": "Square windows once tore airplanes apart. Here's the deadly lesson behind the round window.",
+  "tags": ["#shorts", "#aviation", "#science", "#history", "#facts"],
+  "segments": [
+    {"text": "Why are airplane windows always round? The answer cost lives.", "query": "airplane window"},
+    {"text": "In 1952, the de Havilland Comet became the world's first jet airliner. It had large, square windows.", "query": "de Havilland Comet"},
+    {"text": "Within two years, two Comets broke apart in mid air.", "query": "Comet airliner wreckage"},
+    {"text": "Engineers discovered why. Stress piles up at sharp corners. Every flight, the cabin is pressurized and then released.", "query": "aircraft fuselage"},
+    {"text": "Over time, tiny cracks grew from the square corners until the metal tore open.", "query": "metal fatigue crack"},
+    {"text": "A round shape spreads that stress evenly, so no single point takes all the force.", "query": "airplane cabin window"},
+    {"text": "So next time you look out a plane window, remember: that curve is keeping you alive. Follow for more.", "query": "airplane wing clouds"}
+  ]
+}
