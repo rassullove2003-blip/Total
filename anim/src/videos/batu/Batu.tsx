@@ -240,7 +240,7 @@ export const Batu: React.FC = () => {
 
       <TimelineBar keys={dk} f={f} marks={marks} />
       <Caption t={tVO} words={WORDS} top={1480} />
-      <Sequence from={VO}><Audio src={staticFile("batu/voice.wav")} /></Sequence>
+      <Audio src={staticFile("batu/mix.wav")} />
     </AbsoluteFill>
   );
 };
