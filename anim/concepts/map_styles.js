@@ -55,11 +55,13 @@ function drawMap(c, st, GEO) {
     }
   }
   // army route: dashed arrow
+  if (!window.NO_ROUTE) {
   c.save(); c.setLineDash([16, 10]); c.lineWidth = 7; c.strokeStyle = st.route; c.lineCap = "round";
   c.beginPath(); ROUTE.forEach(([lo, la], i) => { const [x, y] = P(lo, la); i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.stroke(); c.restore();
   const [ax, ay] = P(...ROUTE[ROUTE.length - 1]), [bx, by] = P(...ROUTE[ROUTE.length - 2]), a = Math.atan2(ay - by, ax - bx);
   c.fillStyle = st.route; c.beginPath(); c.moveTo(ax + 22 * Math.cos(a), ay + 22 * Math.sin(a));
   c.lineTo(ax + 16 * Math.cos(a + 2.4), ay + 16 * Math.sin(a + 2.4)); c.lineTo(ax + 16 * Math.cos(a - 2.4), ay + 16 * Math.sin(a - 2.4)); c.fill();
+  }
   // cities
   c.font = `bold 21px ${st.font}`; c.textBaseline = "middle";
   for (const [n, lo, la] of CITIES) {
@@ -153,3 +155,12 @@ window.renderAll = (GEO) => {
   }
   return out;
 };
+
+// production: map only, rendered at `scale` x (540x960 design units)
+window.renderMap = (GEO, key, scale) => {
+  const cv = document.createElement("canvas"); cv.width = W * scale; cv.height = H * scale;
+  const c = cv.getContext("2d"); c.scale(scale, scale);
+  drawMap(c, STYLES[key], GEO);
+  return cv.toDataURL("image/png");
+};
+window.project = (lon, lat) => P(lon, lat);

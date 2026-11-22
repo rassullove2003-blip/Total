@@ -5,3 +5,4 @@ __pycache__/
 watch/
 anim/node_modules/
 anim/out/
+anim/data/*.geojson
