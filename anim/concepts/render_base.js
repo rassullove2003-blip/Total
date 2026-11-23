@@ -12,6 +12,7 @@ const draw = (B, sc) => {
   const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
   const c = cv.getContext("2d"); c.scale(sc, sc); c.translate(-B.ox, -B.oy);
   const rnd = (i) => { const x = Math.sin(i * 12.9898) * 43758.5453; return x - Math.floor(x); };
+  const px = (v) => v / sc; // widths given in output pixels (same look at any layer scale)
   const ring = (pts) => pts.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
   const landPath = () => { c.beginPath(); for (const p of B.land) for (const r of p) { ring(r); c.closePath(); } };
   // sea: muted teal + soft blotches + fine noise
@@ -21,22 +22,22 @@ const draw = (B, sc) => {
     g.addColorStop(0, `rgba(${rnd(i + 3) > 0.5 ? "120,165,165" : "70,110,118"},0.18)`); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(gx - 220, gy - 220, 440, 440); });
   // coastal water ripple lines
   landPath(); c.save(); c.lineJoin = "round";
-  for (const [w, a] of [[26, 0.05], [16, 0.07], [8, 0.1]]) { c.strokeStyle = `rgba(205,225,220,${a})`; c.lineWidth = w; c.stroke(); }
+  for (const [w, a] of [[39, 0.05], [24, 0.07], [12, 0.1]]) { c.strokeStyle = `rgba(205,225,220,${a})`; c.lineWidth = px(w); c.stroke(); }
   c.restore();
   // land: warm beige, inner shading toward the coast, paper grain, mottled blotches
   landPath(); c.fillStyle = "#d9c69a"; c.fill("evenodd");
   c.save(); landPath(); c.clip("evenodd");
   cellsOf(100, (i, cx0, cy0) => { const x = cx0 + rnd(i * 3) * 100, y = cy0 + rnd(i * 5) * 100, r = 30 + rnd(i * 7) * 140, g = c.createRadialGradient(x, y, 0, x, y, r);
     g.addColorStop(0, `rgba(${rnd(i) > 0.5 ? "150,120,70" : "240,225,185"},0.13)`); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(x - r, y - r, 2 * r, 2 * r); });
-  for (let i = 0; i < 26000 * (B.W * B.H) / 4e6; i++) { c.fillStyle = rnd(i) > 0.5 ? "rgba(120,95,55,0.10)" : "rgba(255,248,225,0.10)"; c.fillRect(B.ox + rnd(i * 11) * B.W, B.oy + rnd(i * 13) * B.H, 1 + rnd(i * 17) * 2, 1); }
-  landPath(); c.strokeStyle = "rgba(110,85,45,0.35)"; c.lineWidth = 10; c.stroke(); // darker rim inside the coast
+  for (let i = 0; i < 26000 * (B.W * B.H * sc * sc / 2.25) / 4e6; i++) { c.fillStyle = rnd(i) > 0.5 ? "rgba(120,95,55,0.10)" : "rgba(255,248,225,0.10)"; c.fillRect(B.ox + rnd(i * 11) * B.W, B.oy + rnd(i * 13) * B.H, px(1.5 + rnd(i * 17) * 3), px(1.5)); }
+  landPath(); c.strokeStyle = "rgba(110,85,45,0.35)"; c.lineWidth = px(15); c.stroke(); // darker rim inside the coast
   c.restore();
-  landPath(); c.strokeStyle = "#6e5733"; c.lineWidth = 1.6; c.stroke();
+  landPath(); c.strokeStyle = "#6e5733"; c.lineWidth = px(2.4); c.stroke();
   // lakes
-  c.beginPath(); for (const r of B.lakes) { ring(r); c.closePath(); } c.fillStyle = "#6f9ea0"; c.fill(); c.strokeStyle = "#5a7d78"; c.lineWidth = 1; c.stroke();
+  c.beginPath(); for (const r of B.lakes) { ring(r); c.closePath(); } c.fillStyle = "#6f9ea0"; c.fill(); c.strokeStyle = "#5a7d78"; c.lineWidth = px(1.5); c.stroke();
   // rivers: thin, tapered look by drawing twice
   c.lineCap = c.lineJoin = "round";
-  for (const rv of B.rivers) { c.beginPath(); ring(rv.pts); c.strokeStyle = "#6f9ea0"; c.lineWidth = rv.name ? 2.2 : 1.4; c.stroke(); }
+  for (const rv of B.rivers) { c.beginPath(); ring(rv.pts); c.strokeStyle = "#6f9ea0"; c.lineWidth = px(rv.name ? 3.3 : 2.1); c.stroke(); }
   return cv.toDataURL("image/png");
 };
 
