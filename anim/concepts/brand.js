@@ -69,10 +69,11 @@ const draw = (LAND, kind) => {
   c.shadowColor = "rgba(255,210,120,.7)"; c.shadowBlur = 26; c.fillStyle = gl; c.fillRect(W / 2 - 3, 0, 6, H); c.shadowBlur = 0;
   // title in the safe area
   c.textAlign = "center"; c.textBaseline = "middle";
-  c.font = "bold 170px Georgia, 'DejaVu Serif', serif"; c.lineWidth = 10; c.strokeStyle = "rgba(40,25,10,.8)"; c.shadowColor = "rgba(0,0,0,.7)"; c.shadowBlur = 30;
-  c.strokeText("THE OTHER HALF", W / 2, 660); c.shadowBlur = 0; c.fillStyle = "#f7efdc"; c.fillText("THE OTHER HALF", W / 2, 660);
-  c.font = "bold 50px 'DejaVu Sans', sans-serif"; c.lineWidth = 8; c.strokeStyle = "rgba(0,0,0,.75)";
-  c.strokeText("The side of history nobody told you", W / 2, 830); c.fillStyle = "#ffe3a8"; c.fillText("The side of history nobody told you", W / 2, 830);
+  c.font = "bold 128px Georgia, 'DejaVu Serif', serif"; c.lineWidth = 9; c.strokeStyle = "rgba(40,25,10,.8)"; c.shadowColor = "rgba(0,0,0,.7)"; c.shadowBlur = 30;
+  c.strokeText("THE OTHER HALF", W / 2, 690); c.shadowBlur = 0; c.fillStyle = "#f7efdc"; c.fillText("THE OTHER HALF", W / 2, 690);
+  console.log("title width", c.measureText("THE OTHER HALF").width);
+  c.font = "bold 40px 'DejaVu Sans', sans-serif"; c.lineWidth = 7; c.strokeStyle = "rgba(0,0,0,.75)";
+  c.strokeText("The side of history nobody told you", W / 2, 800); c.fillStyle = "#ffe3a8"; c.fillText("The side of history nobody told you", W / 2, 800);
   return cv.toDataURL("image/jpeg", 0.92);
 };
 
