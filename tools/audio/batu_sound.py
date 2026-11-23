@@ -82,13 +82,12 @@ drone(t(F["never"]), t(F["wait"]), notes=(D2, A2, F3), vel=0.4)
 drone(t(F["novgorod"]), t(F["hundred"]), notes=(A2, D3, F3), vel=0.35, warm=1100)
 glock_arp(t(F["youSee"]), t(F["youSee"]) + 2.0, notes=(A4, D5, F4, A4), vel=0.35)
 drums(t(F["hundred"]), t(F["tribute"]), dens=0.6, vel=0.65)
-drone(t(F["tribute"]), DUR - 0.5, notes=(D2, A2, D3), vel=0.45)
-drums(t(F["so"]), t(F["weather"]) + 0.3, dens=1.0, vel=0.7)
+drone(t(F["tribute"]), DUR - 0.5, notes=(D2, A2, D3), vel=0.3)
+drums(t(F["so"]), t(F["weather"]) + 0.3, dens=0.4, vel=0.5)
+# accent hits land ~0.2 s before their word (in the breath), short and soft so they never sit on a syllable
 for f0 in (F["year"], F["sacked"], F["genius"], F["weather"]):
-    put(music, I.timpani(m2f(D2), 1.0, r, dur=2.2), t(f0), 1.2)
-    put(music, I.cymbal(0.55, r, dur=2.0), t(f0), 0.5)
-put(music, I.brass(m2f(D3), 0.9, 0.85, r, kind="tuba"), t(F["sacked"]), 0.6)
-put(music, I.brass(m2f(A3), 0.9, 0.7, r, kind="tuba"), t(F["sacked"]) + 0.02, 0.4)
+    put(music, I.timpani(m2f(D2), 0.9, r, dur=1.2), t(f0) - 0.22, 0.55)
+    put(music, I.cymbal(0.4, r, dur=1.0, bright=0.6), t(f0) - 0.22, 0.18)
 
 # ------------------------------------------------------------------ effects
 def hooves(s0, s1, gain=0.5):
@@ -121,40 +120,31 @@ def rewind(s0, s1):
     sweep = np.sin(2 * np.pi * np.cumsum(f) / SR) * 0.25 * np.minimum(1, tt * 4) * np.minimum(1, (s1 - s0 - tt) * 6)
     put(sfx, sweep + 0.3 * S.whoosh(s1 - s0, r, peak=0.8)[:n], s0, 0.7)
 
-for f0 in (F["nap"], F["hit"]): put(sfx, S.whoosh(1.0, r, peak=0.5, f_lo=250, f_hi=1500), t(f0), 0.6, -0.3)
-ice(t(F["fear"]) + 0.2); ice(t(F["fear"]) + 0.5, 0.4)
+# Sparse on purpose (owner: "too many sounds, they cover the voice"): only the key beats, quiet, and the whole
+# effects bus is ducked under speech like the music.
+for f0 in (F["nap"], F["hit"]): put(sfx, S.whoosh(1.0, r, peak=0.5, f_lo=250, f_hi=1500), t(f0), 0.3, -0.3)
+ice(t(F["fear"]) + 0.2, 0.3)
 rewind(t(F["seven"]) - 0.05, t(F["mongols"]) - 0.1)
-put(sfx, S.whoosh(1.2, r, peak=0.6, f_lo=150, f_hi=900), t(F["empire"]), 0.6)
-hooves(t(F["tens"]) - 0.3, t(F["ahead"]) + 0.4, 0.55)
-for k in range(5): put(sfx, I.pluck(m2f([D4, F4, G4, A4, C5][k]), 0.6, r, dur=0.6, bright=0.7), t(F["notOne"] + k * 5), 0.5, -0.4 + 0.2 * k)
-put(sfx, S.babble(1.4, r, 140, 1.0), t(F["quarrel"]), 0.16, -0.6)
-put(sfx, S.babble(1.4, r, 120, 0.9), t(F["quarrel"]) + 0.2, 0.16, 0.6)
-for k in range(9): put(sfx, S.push_thump(r), t(F["forests"] + k * 1.2), 0.25, 0.3 * np.sin(k))
-put(sfx, S.bubbles(1.5, r, 10), t(F["swamps"]), 0.45)
-put(sfx, I.timpani(m2f(D2 - 5), 0.8, r, dur=1.2), t(F["noRoads"]), 0.6)
-put(sfx, S.bubbles(1.6, r, 16), t(F["drown"]), 0.3); put(sfx, S.splash_big(r)[: int(1.2 * SR)], t(F["drown"]) + 0.3, 0.1)
-ice(t(F["freeze"])); ice(t(F["freeze"]) + 0.6, 0.35)
-put(sfx, S.whoosh(0.8, r, peak=0.4, f_lo=900, f_hi=5000, air=0.4), t(F["flat"]), 0.5)
-hooves(t(F["dec"]), t(F["novg2"]), 0.4)
-for f0 in (F["ryazan"], F["kolomna"], F["moscow"], F["vladimir"], F["march"] + 25, F["thaw"]): fire(t(f0))
-for k in range(3):
-    put(sfx, S.oof(r, kind="oof"), t(F["fell"] + 2 + k * 8), 0.15, -0.6 + 0.6 * k)
-    put(sfx, S.push_thump(r), t(F["fell"] + 9 + k * 8), 0.6, -0.5 + 0.5 * k)
-put(sfx, I.glock(m2f(A4), 0.6, r), t(F["youSee"]), 0.6)
-wb = S.water_bed(4.5, r); put(sfx, wb, t(F["thaw"]), 0.35)
-put(sfx, S.bubbles(3.0, r, 6), t(F["thaw"]) + 1.0, 0.3)
-put(sfx, I.timpani(m2f(D2), 1.0, r, dur=1.6), t(F["back"] - 6), 0.9)
-put(sfx, S.whoosh(1.0, r, peak=0.3, f_lo=200, f_hi=1100), t(F["back"]), 0.55)
-for k in range(6): put(sfx, I.glock(m2f(D5 + (k % 3) * 3), 0.35, r, dur=0.6), t(F["tribute"] + 20 + k * 6), 0.35, 0.3)  # coins
+put(sfx, S.whoosh(1.2, r, peak=0.6, f_lo=150, f_hi=900), t(F["empire"]), 0.35)
+hooves(t(F["tens"]) - 0.3, t(F["ahead"]) + 0.4, 0.18)
+ice(t(F["freeze"]), 0.3)
+for f0 in (F["ryazan"], F["moscow"], F["vladimir"]): fire(t(f0), dur=1.0, gain=0.22)
+put(sfx, I.glock(m2f(A4), 0.6, r), t(F["youSee"]), 0.35)
+put(sfx, S.water_bed(3.0, r), t(F["thaw"]), 0.1)
+put(sfx, I.timpani(m2f(D2), 1.0, r, dur=1.6), t(F["back"] - 6), 0.5)
 
 # ------------------------------------------------------------------ mix
 vbuf = np.zeros(N); i0 = int(VO / 30 * SR); vbuf[i0:i0 + len(voice)] = voice[: N - i0]
 win = int(0.05 * SR); venv = np.sqrt(np.convolve(vbuf ** 2, np.ones(win) / win, mode="same"))
-duck = 1 - 0.72 * np.clip(venv / (venv.max() * 0.25 + 1e-9), 0, 1)            # up to ~-8 dB under speech
-duck = np.convolve(duck, np.ones(int(0.12 * SR)) / int(0.12 * SR), mode="same")
+# speech activity 0..1, held through short word gaps so the bed doesn't pump between words
+act = np.clip(venv / (venv.max() * 0.12 + 1e-9), 0, 1)
+from scipy.ndimage import maximum_filter1d
+act = maximum_filter1d(act, size=int(0.35 * SR))
+act = np.convolve(act, np.ones(int(0.15 * SR)) / int(0.15 * SR), mode="same")
+duck = 1 - 0.85 * act                                                   # ~-16 dB under speech, full level in pauses
 ir = make_ir(1.4, 3)
 music_w = convolve_st(music, ir)[:, :N] * 0.35 + music
-mix = np.vstack([vbuf, vbuf]) * 1.0 + music_w * duck * 0.3 + sfx * (0.45 + 0.1 * (1 - duck))
+mix = np.vstack([vbuf, vbuf]) * 1.0 + music_w * duck * 0.19 + sfx * duck * 0.5
 mix = mix[:, : int(DUR * SR)]
 def limit(x, ceil=0.89, att=0.002, rel=0.15):
     """look-ahead peak limiter: gain follows the inverse of the smoothed peak envelope"""
