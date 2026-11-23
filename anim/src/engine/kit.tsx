@@ -288,3 +288,121 @@ export const Rewind: React.FC<{ f: number; from: number; to: number }> = ({ f, f
     </>
   );
 };
+
+// ================= v3 additions: date ruler (years -> days -> minutes), clocks, props =================
+/** time value = minutes since 1 Jan 1800 UTC (works for any 19th/20th-century story) */
+export const minutesOf = (y: number, mo = 1, d = 1, h = 0, mi = 0) => (Date.UTC(y, mo - 1, d, h, mi) - Date.UTC(1800, 0, 1)) / 60000;
+const dateOf = (m: number) => new Date(Date.UTC(1800, 0, 1) + m * 60000);
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const pad2 = (n: number) => String(n).padStart(2, "0");
+export type RulerKey = { f: number; t: number; span: number }; // t, span in minutes
+export const DateRuler: React.FC<{ keys: RulerKey[]; f: number; marks?: { t: number; label: string; span?: [number, number] }[] }> = ({ keys, f, marks = [] }) => {
+  let a = keys[0], b = keys[0];
+  if (f >= keys[keys.length - 1].f) a = b = keys[keys.length - 1];
+  else for (let i = 0; i < keys.length - 1; i++) if (f >= keys[i].f && f < keys[i + 1].f) { a = keys[i]; b = keys[i + 1]; break; }
+  const k = a === b ? 0 : ss((f - a.f) / (b.f - a.f));
+  const t = lerp(a.t, b.t, k), span = Math.exp(lerp(Math.log(a.span), Math.log(b.span), k));
+  const X = (v: number) => FW / 2 + ((v - t) / span) * (FW - 80);
+  const STEPS: [number, (d: Date) => string][] = [[1, (d) => `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`], [5, (d) => `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`],
+    [15, (d) => `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`], [60, (d) => `${pad2(d.getUTCHours())}:00`], [360, (d) => `${pad2(d.getUTCHours())}:00`],
+    [1440, (d) => `${MON[d.getUTCMonth()]} ${d.getUTCDate()}`], [43830, (d) => MON[d.getUTCMonth()]], [525960, (d) => String(d.getUTCFullYear())], [5259600, (d) => String(d.getUTCFullYear())]];
+  const step = STEPS.find(([s]) => span / s <= 5.5) ?? STEPS[STEPS.length - 1];
+  const ticks: number[] = [];
+  if (step[0] >= 43830) { // calendar months / years
+    const d0 = dateOf(t - span), d1 = dateOf(t + span), yearly = step[0] >= 525960;
+    for (let y = d0.getUTCFullYear(); y <= d1.getUTCFullYear() + 1; y++) for (let m = 0; m < 12; m += yearly ? 12 : 1) ticks.push(minutesOf(y, m + 1, 1));
+  } else for (let v = Math.ceil((t - span) / step[0]) * step[0]; v < t + span; v += step[0]) ticks.push(v);
+  const d = dateOf(t), now = span < 2880 ? `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()} · ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`
+    : span < 90000 ? `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}` : String(d.getUTCFullYear());
+  const vis = marks.filter((m) => !m.span || (span >= m.span[0] && span <= m.span[1]));
+  const nearest = vis.reduce<{ t: number; label: string } | null>((b2, q) => (!b2 || Math.abs(q.t - t) < Math.abs(b2.t - t) ? q : b2), null);
+  return (
+    <div style={{ position: "absolute", left: 0, top: FH - 250, width: FW, height: 250 }}>
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(rgba(20,16,10,0), rgba(20,16,10,.72) 40%)" }} />
+      <svg width={FW} height={250} style={{ position: "absolute", inset: 0 }}>
+        <line x1={0} x2={FW} y1={150} y2={150} stroke="#e9dcc0" strokeWidth={4} opacity={0.8} />
+        {ticks.map((v) => { const x = X(v); if (x < -60 || x > FW + 60) return null; return <g key={v} opacity={clamp01(1 - Math.abs(x - FW / 2) / (FW / 2))}>
+          <line x1={x} x2={x} y1={136} y2={150} stroke="#e9dcc0" strokeWidth={3} />
+          <text x={x} y={192} textAnchor="middle" fontFamily="Georgia, DejaVu Serif, serif" fontSize={26} fill="#e9dcc0">{step[1](dateOf(v))}</text></g>; })}
+        {vis.map((m) => { const x = X(m.t); if (x < -50 || x > FW + 50) return null; const near = m === nearest ? clamp01(1 - Math.abs(m.t - t) / (span * 0.2)) : 0;
+          return <g key={m.label}><circle cx={x} cy={150} r={9 + near * 4} fill="#d64235" stroke="#f3e4c4" strokeWidth={3} />
+            {near > 0.35 && <text x={x} y={118} textAnchor="middle" fontFamily="DejaVu Sans, sans-serif" fontWeight={700} fontSize={26} fill="#ffdca8" opacity={near}>{m.label}</text>}</g>; })}
+        <path d={`M ${FW / 2 - 16} 76 L ${FW / 2 + 16} 76 L ${FW / 2} 98 Z`} fill="#f7c24a" />
+        <text x={FW / 2} y={62} textAnchor="middle" fontFamily="Georgia, DejaVu Serif, serif" fontWeight={700} fontSize={42} fill="#f7efdc" stroke="rgba(0,0,0,.5)" strokeWidth={6} paintOrder="stroke">{now}</text>
+      </svg>
+    </div>
+  );
+};
+
+/** stopwatch: minutes elapsed (0..60) with ticking hand, screen space */
+export const Stopwatch: React.FC<{ x: number; y: number; r: number; minutes: number; opacity?: number; label?: string }> = ({ x, y, r, minutes, opacity = 1, label }) => (
+  <svg width={FW} height={FH} style={{ position: "absolute", inset: 0, opacity }}>
+    <g transform={`translate(${x} ${y})`}>
+      <rect x={-r * 0.16} y={-r * 1.28} width={r * 0.32} height={r * 0.22} rx={6} fill="#c9a24a" stroke="#2a1d0e" strokeWidth={6} />
+      <circle r={r} fill="#f4ecd8" stroke="#2a1d0e" strokeWidth={10} />
+      <path d={`M 0 0 L 0 ${-r * 0.92} A ${r * 0.92} ${r * 0.92} 0 ${minutes > 30 ? 1 : 0} 1 ${Math.sin((minutes / 60) * 2 * Math.PI) * r * 0.92} ${-Math.cos((minutes / 60) * 2 * Math.PI) * r * 0.92} Z`} fill="#d64235" opacity={0.35} />
+      {Array.from({ length: 12 }, (_, i) => <line key={i} x1={0} y1={-r * 0.8} x2={0} y2={-r * 0.92} stroke="#2a1d0e" strokeWidth={i % 3 ? 4 : 8} transform={`rotate(${i * 30})`} />)}
+      <line x1={0} y1={0} x2={0} y2={-r * 0.78} stroke="#2a1d0e" strokeWidth={9} strokeLinecap="round" transform={`rotate(${(minutes / 60) * 360})`} />
+      <circle r={r * 0.08} fill="#2a1d0e" />
+      {label && <text y={r * 0.45} textAnchor="middle" fontFamily="Georgia, DejaVu Serif, serif" fontWeight={700} fontSize={r * 0.34} fill="#2a1d0e">{label}</text>}
+    </g>
+  </svg>
+);
+/** clock face showing a time of day (hours, minutes) */
+export const ClockFace: React.FC<{ x: number; y: number; r: number; h: number; m: number; opacity?: number }> = ({ x, y, r, h, m, opacity = 1 }) => (
+  <svg width={FW} height={FH} style={{ position: "absolute", inset: 0, opacity }}>
+    <g transform={`translate(${x} ${y})`}>
+      <circle r={r} fill="#f4ecd8" stroke="#2a1d0e" strokeWidth={10} />
+      {Array.from({ length: 12 }, (_, i) => <text key={i} x={Math.sin((i + 1) * Math.PI / 6) * r * 0.74} y={-Math.cos((i + 1) * Math.PI / 6) * r * 0.74 + r * 0.09} textAnchor="middle"
+        fontFamily="Georgia, DejaVu Serif, serif" fontWeight={700} fontSize={r * 0.22} fill="#2a1d0e">{i + 1}</text>)}
+      <line x1={0} y1={0} x2={0} y2={-r * 0.48} stroke="#2a1d0e" strokeWidth={12} strokeLinecap="round" transform={`rotate(${((h % 12) + m / 60) * 30})`} />
+      <line x1={0} y1={0} x2={0} y2={-r * 0.78} stroke="#b3271c" strokeWidth={7} strokeLinecap="round" transform={`rotate(${m * 6})`} />
+      <circle r={r * 0.07} fill="#2a1d0e" />
+    </g>
+  </svg>
+);
+export const Stamp: React.FC<{ x: number; y: number; text: string; f: number; at: number; until?: number; rot?: number; color?: string; size?: number }> = ({ x, y, text, f, at, until = 1e9, rot = -12, color = "#c8261b", size = 70 }) => {
+  if (f < at || f > until) return null;
+  const t = ramp(f, at, 6), s = 1.6 - 0.6 * ss(t);
+  return <div style={{ position: "absolute", left: x - 400, top: y - size, width: 800, textAlign: "center", transform: `rotate(${rot}deg) scale(${s})`, opacity: t * (1 - ramp(f, until - 6, 6)) }}>
+    <span style={{ display: "inline-block", padding: "6px 26px", border: `8px solid ${color}`, borderRadius: 14, color, fontFamily: "DejaVu Sans, sans-serif", fontWeight: 900,
+      fontSize: size, letterSpacing: 4, background: "rgba(255,245,230,.82)" }}>{text}</span></div>;
+};
+export const Bubble: React.FC<{ x: number; y: number; w: number; text: string; f: number; at: number; until: number; tail?: "l" | "r" }> = ({ x, y, w, text, f, at, until, tail = "l" }) => {
+  if (f < at || f > until) return null;
+  const a = ss(ramp(f, at, 6)) * (1 - ramp(f, until - 6, 6)), shown = Math.ceil(text.length * clamp01((f - at) / 22));
+  return <div style={{ position: "absolute", left: x, top: y, width: w, transform: `scale(${0.8 + 0.2 * a})`, transformOrigin: tail === "l" ? "0% 100%" : "100% 100%", opacity: a }}>
+    <div style={{ background: "#fffaf0", border: "6px solid #2a1d0e", borderRadius: 34, padding: "22px 30px", fontFamily: "Georgia, DejaVu Serif, serif", fontWeight: 700, fontSize: 46,
+      color: "#2a1d0e", lineHeight: 1.2, boxShadow: "0 8px 20px rgba(0,0,0,.35)" }}>“{text.slice(0, shown)}”</div>
+    <svg width={80} height={60} style={{ position: "absolute", [tail === "l" ? "left" : "right"]: 50, bottom: -52 }}><path d="M 6 0 L 60 0 L 10 54 Z" fill="#fffaf0" stroke="#2a1d0e" strokeWidth={6} strokeLinejoin="round" /><rect x={8} y={-6} width={50} height={10} fill="#fffaf0" /></svg>
+  </div>;
+};
+/** palace (House of Wonders style): white block, balconies, clock tower; burn 0..1 adds fire & smoke; flag 0..1 = flag height */
+export const Palace: React.FC<{ x: number; y: number; s: number; burn: number; flag: number; f: number; flagColor?: string }> = ({ x, y, s, burn, flag, f, flagColor = "#c8261b" }) => (
+  <svg width={FW} height={FH} style={{ position: "absolute", inset: 0 }}>
+    <g transform={`translate(${x} ${y}) scale(${s})`}>
+      <rect x={-150} y={-160} width={300} height={160} fill={mixHex("#f2ead8", "#5a4a3a", burn * 0.6)} stroke="#2a1d0e" strokeWidth={6} />
+      {[0, 1, 2].map((r) => [0, 1, 2, 3, 4, 5].map((c) => <rect key={`${r}${c}`} x={-130 + c * 44} y={-145 + r * 48} width={26} height={30} fill="#3a2c20" opacity={0.8} />))}
+      <rect x={-160} y={-58} width={320} height={10} fill="#8a6a48" /><rect x={-160} y={-108} width={320} height={10} fill="#8a6a48" />
+      <rect x={-28} y={-250} width={56} height={92} fill={mixHex("#f2ead8", "#5a4a3a", burn * 0.6)} stroke="#2a1d0e" strokeWidth={6} />
+      <circle cx={0} cy={-222} r={16} fill="#f4ecd8" stroke="#2a1d0e" strokeWidth={4} />
+      <line x1={0} y1={-250} x2={0} y2={-330} stroke="#2a1d0e" strokeWidth={6} />
+      <path d={`M 0 ${-330 + (1 - flag) * 70} l 46 12 l -46 12 Z`} fill={flagColor} stroke="#2a1d0e" strokeWidth={3} transform={`skewY(${Math.sin(f / 4) * 4})`} />
+      {burn > 0 && [[-110, -150], [-40, -160], [40, -150], [110, -150], [0, -260]].map(([fx, fy], i) => {
+        const k = clamp01(burn * 1.4 - i * 0.12), sc = k * (1 + 0.15 * Math.sin(f / 2 + i));
+        return k > 0 ? <g key={i} transform={`translate(${fx} ${fy}) scale(${sc})`}>
+          <path d="M0 -70 C 26 -36 36 -12 22 12 C 14 26 -14 26 -22 12 C -36 -12 -18 -34 0 -70 Z" fill="#f2552c" stroke="#5a1d0e" strokeWidth={4} />
+          <path d="M0 -36 C 12 -18 14 -6 8 6 C 4 12 -4 12 -8 6 C -14 -6 -8 -18 0 -36 Z" fill="#ffd25a" />
+          {[0, 1].map((q) => { const tt = ((f / 18 + q / 2 + i * 0.13) % 1); return <circle key={q} cx={Math.sin(q + f / 10) * 14} cy={-80 - tt * 120} r={14 + tt * 26} fill="#4a4038" opacity={0.4 * (1 - tt)} />; })}
+        </g> : null; })}
+    </g>
+  </svg>
+);
+export const Boom: React.FC<{ x: number; y: number; age: number; size?: number }> = ({ x, y, age, size = 1 }) => {
+  if (age < 0 || age > 18) return null;
+  const t = age / 18, r = (30 + 90 * Math.sqrt(t)) * size;
+  return <svg width={FW} height={FH} style={{ position: "absolute", inset: 0 }}><g transform={`translate(${x} ${y})`} opacity={1 - t}>
+    <circle r={r} fill="#ffcf5a" opacity={0.7} /><circle r={r * 0.6} fill="#ff7a1a" />
+    {Array.from({ length: 8 }, (_, i) => <line key={i} x1={0} y1={0} x2={Math.cos(i * 0.8) * r * 1.3} y2={Math.sin(i * 0.8) * r * 1.3} stroke="#fff3c0" strokeWidth={6} />)}
+  </g></svg>;
+};
