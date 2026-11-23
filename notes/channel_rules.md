@@ -1,10 +1,10 @@
-# Channel rules (working title TBD)
+# Channel rules — The Other Half
 
 Read before writing any script.
 
 ## Identity
 - English, US/UK audience. History explained on animated 2D maps with cartoon historical figures (our own character style).
-- Niche: Eurasia beyond Western Europe — steppe empires (Mongols, Golden Horde, Huns, Turks, Timur), Silk Road cities and caravans, Rus/Russia, Central Asia, Persia, China borderlands. Western Europe only when it collides with these.
+- Niche: ALL of history, told from the side people don't know ("the side of history nobody told you"). Strong recurring area: Eurasia beyond Western Europe — steppe empires, Silk Road, Rus/Russia, Central Asia, Persia, China — but any era/region is fair game if the angle is surprising.
 - No host character. Narrator voice only (Kokoro bm_george, British).
 - Every story = a surprising true paradox with a clear cause → effect chain that can be SHOWN on a map.
 
