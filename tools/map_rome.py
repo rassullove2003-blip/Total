@@ -5,7 +5,7 @@ Usage: python3 tools/map_rome.py
 """
 import json, sys, math
 from pathlib import Path
-from shapely.geometry import shape, box
+from shapely.geometry import shape, box, Polygon
 from shapely.ops import unary_union
 sys.path.insert(0, str(Path(__file__).parent))
 from mapdata import P, polys, lines, load, path_d, smooth, OUT
@@ -33,24 +33,29 @@ def main():
     rome = rome.difference(A("EGY")).difference(box(9.5, 45.7, 31, 51)).difference(box(19.5, 42.4, 31, 45.8)).difference(box(-11, 26, 8.3, 38)).difference(box(-11, 26, 12, 33.5))
     rome = rome.intersection(land.buffer(0.02))
     ita = A("ITA", "SMR", "VAT")
+    north = Polygon([(5, 48), (15, 48), (15, 44.16), (12.42, 44.16), (10.28, 43.68), (5, 43.68)])  # Rubicon (Adriatic) to the Arno (Tyrrhenian)
+    west_rhine = Polygon([(2, 53.5), (4.5, 52.0), (6.1, 51.85), (6.9, 51.0), (7.6, 50.35), (8.3, 49.9), (8.2, 49.0), (7.6, 47.6), (2, 46)])
+    dalmatia = Polygon([(13.4, 46.0), (14.6, 45.9), (15.6, 45.5), (16.6, 44.6), (17.8, 43.9), (19.3, 43.0), (19.9, 42.4), (19.6, 41.8), (12.5, 41.8), (12.5, 46.0)])
+    nile = unary_union([shape(f["geometry"]) for f in load("ne_10m_rivers_lake_centerlines") if (f["properties"].get("name") or "").startswith("Nile")]).intersection(box(28, 22, 34, 31.7))
+    keep_rome = lambda g: g  # provinces below follow modern borders as proxies (no straight cut lines)
     regions = {
-        "gaul": ("Gaul", A("FRA", "BEL", "LUX", "CHE", "NLD", "DEU").difference(box(7.5, 30, 20, 43.2))),   # Corsica stays with Italy's islands
-        "cisalpine": ("Cisalpine Gaul", ita.intersection(box(5, 43.95, 15, 48))),
-        "illyricum": ("Illyricum", A("HRV", "SVN", "BIH", "MNE")),
-        "italy": ("Italy", ita.intersection(box(5, 35, 20, 43.95)).union(A("FRA").intersection(box(8, 41, 10, 43.2)))),
+        "gaul": ("Gaul", A("FRA", "BEL", "LUX", "CHE").union(A("NLD", "DEU").intersection(west_rhine)).difference(box(7.5, 30, 20, 43.2))),
+        "cisalpine": ("Cisalpine Gaul", ita.intersection(north)),
+        "illyricum": ("Illyricum", A("HRV", "SVN", "BIH", "MNE").intersection(dalmatia)),
+        "italy": ("Italy", ita.difference(north).union(A("FRA").intersection(box(8, 41, 10, 43.2)))),
         "spain": ("Hispania", A("ESP", "PRT")),
-        "africa": ("Africa", A("TUN")),
-        "greece": ("Greece", A("GRC", "ALB", "MKD", "BGR").union(A("TUR").intersection(box(25, 39.5, 29.2, 42.5)))),
-        "east": ("The East", A("TUR").difference(box(25, 39.5, 29.2, 42.5)).union(A("SYR", "LBN", "ISR", "PSE", "JOR", "CYP")).union(A("LBY").intersection(box(19, 25, 26, 34)))),
+        "africa": ("Africa", A("TUN").intersection(box(7, 34.6, 12, 38))),
+        "greece": ("Greece", A("GRC", "ALB", "MKD")),
+        "east": ("The East", A("TUR", "SYR", "LBN", "ISR", "PSE", "CYP").union(A("LBY").intersection(Polygon([(19.8, 30.2), (25.2, 31.3), (25.2, 33.5), (19.8, 33.5)]))).difference(box(35, 30, 50, 37.6).difference(box(35, 30, 38.6, 37.6)))),
     }
     out = []
     for rid, (name, proxy) in regions.items():
-        g = rome.intersection(proxy.buffer(0.05)).intersection(land.buffer(0.02))
+        g = proxy.buffer(0.0).intersection(land.buffer(0.02))
         g = unary_union([p for p in polys(g) if p.area > 0.01]).simplify(0.01)
         big = max(polys(g), key=lambda p: p.area); lp = big.representative_point()
         out.append({"id": rid, "name": name, "d": path_d(g), "label": list(P(lp.x, lp.y)), "area": round(g.area, 1)})
-    eg = A("EGY").intersection(box(24, 22, 36, 32)).intersection(land.buffer(0.02)).simplify(0.01)
-    out.append({"id": "egypt", "name": "Egypt", "d": path_d(eg), "label": list(P(30.5, 27.5)), "area": round(eg.area, 1)})
+    eg = A("EGY").intersection(nile.buffer(0.45).union(Polygon([(29.3, 31.3), (32.4, 31.3), (31.6, 30.0), (31.0, 29.9)]).buffer(0.5))).intersection(land.buffer(0.02)).simplify(0.01)
+    out.append({"id": "egypt", "name": "Egypt", "d": path_d(eg), "label": list(P(31.0, 27.0)), "area": round(eg.area, 1)})
     (OUT / "borders_49bc.json").write_text(json.dumps(out, separators=(",", ":")))
     print([(o["id"], o["area"]) for o in out])
     C = {"Rome": (12.49, 41.9), "Ravenna": (12.2, 44.42), "Ariminum": (12.57, 44.06), "Rubicon": (12.42, 44.16), "Corfinium": (13.84, 42.12), "Brundisium": (17.94, 40.63),
