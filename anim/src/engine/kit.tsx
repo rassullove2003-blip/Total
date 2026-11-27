@@ -225,7 +225,7 @@ export const mouthAt = (env: number[], f: number) => {
 
 // ---------------- timeline bar ----------------
 export type DateKey = { f: number; date: number; span: number }; // date in fractional years; span = years visible across the bar
-export const TimelineBar: React.FC<{ keys: DateKey[]; f: number; marks: { date: number; label: string; span?: [number, number] }[]; opacity?: number }> = ({ keys, f, marks: allMarks, opacity = 1 }) => {
+export const TimelineBar: React.FC<{ keys: DateKey[]; f: number; marks: { date: number; label: string; span?: [number, number] }[]; opacity?: number; yearLabel?: (y: number) => string }> = ({ keys, f, marks: allMarks, opacity = 1, yearLabel = (y) => String(y) }) => {
   let a = keys[0], b = keys[0];
   if (f >= keys[keys.length - 1].f) a = b = keys[keys.length - 1];
   else for (let i = 0; i < keys.length - 1; i++) if (f >= keys[i].f && f < keys[i + 1].f) { a = keys[i]; b = keys[i + 1]; break; }
@@ -236,8 +236,8 @@ export const TimelineBar: React.FC<{ keys: DateKey[]; f: number; marks: { date: 
   const step = span > 600 ? 100 : span > 150 ? 50 : span > 30 ? 10 : span > 2.5 ? 1 : 1 / 12;
   const ticks: number[] = []; for (let d = Math.ceil((date - span) / step) * step; d < date + span; d += step) ticks.push(Math.round(d * 1e4) / 1e4);
   const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const lab = (d: number) => (step < 1 ? MONTHS[Math.round((d - Math.floor(d)) * 12) % 12] : String(Math.round(d)));
-  const now = step < 1 ? `${MONTHS[Math.floor((date - Math.floor(date)) * 12) % 12]} ${Math.floor(date)}` : String(Math.floor(date));
+  const lab = (d: number) => (step < 1 ? MONTHS[Math.round((d - Math.floor(d)) * 12) % 12] : yearLabel(Math.round(d)));
+  const now = step < 1 ? `${MONTHS[Math.floor((date - Math.floor(date)) * 12) % 12]} ${yearLabel(Math.floor(date))}` : yearLabel(Math.floor(date));
   return (
     <div style={{ position: "absolute", left: 0, top: FH - 250, width: FW, height: 250, opacity }}>
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(rgba(20,16,10,0), rgba(20,16,10,.72) 40%)" }} />

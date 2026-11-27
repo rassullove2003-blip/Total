@@ -13,19 +13,18 @@
 - Khalid fled to the German consulate; on 2 Oct stepped from the consulate garden gate straight into a German boat ("without setting foot on the soil of Zanzibar"), taken to Dar es Salaam.
 - "The British punished Khalid's supporters by forcing them to pay reparations to cover the cost of shells fired against them and for damages caused by the looting" (300,000 rupees).
 
-## Voice-over
-The shortest war in history lasted thirty-eight minutes. And the losers had to pay for the shells.
-Zanzibar, eighteen ninety-six. A rich little island sultanate off East Africa, squeezed between German and British colonies.
-On August twenty-fifth, the sultan dies suddenly. Within hours, his nephew Khalid moves into the palace. Without British approval.
-London wanted someone else. So the Royal Navy sends warships. Five of them.
+## Voice-over (v2: cold open on Khalid's own words, to match the title)
+"We do not believe you would open fire." That was the Sultan of Zanzibar's reply to the British. Thirty-eight minutes later, his war was over. And his side got the bill for the shells.
+Zanzibar, eighteen ninety-six. A rich little island off East Africa, squeezed between German and British colonies.
+On August twenty-fifth, the old sultan dies suddenly. Within hours, his nephew Khalid moves into the palace. Without British approval.
+London wanted someone else. So the Royal Navy sends five warships.
 Khalid gathers two thousand eight hundred men, a few old cannons, and the royal yacht.
 The ultimatum: leave the palace by nine a.m.
-Khalid's reply: we do not believe you would open fire.
 Wait. Why would a tiny island challenge the biggest navy on Earth?
 You see, three years earlier, Khalid had tried to grab the throne the same way, and the British simply talked him out of it. This time, he thought they were bluffing.
 Nine o'clock. Nine-oh-two. Fire.
 Nine-oh-five: the royal yacht shoots at a British cruiser, and sinks.
 Nine-forty: the palace is in flames. The flag comes down. War over.
-Khalid flees to the German consulate, then escapes by boat, straight from its garden, without ever touching Zanzibar soil.
-And the bill? His supporters were forced to pay for the shells fired at them.
+Khalid escapes through the German consulate, by boat, straight from its garden, without ever touching Zanzibar soil.
+And the bill? Three hundred thousand rupees. For the shells fired at them.
 So: the bravest sultan in history, or the worst bluffer?
